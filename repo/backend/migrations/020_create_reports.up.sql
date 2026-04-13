@@ -1,0 +1,23 @@
+CREATE TABLE reports (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    uuid CHAR(36) NOT NULL UNIQUE,
+    reporter_id BIGINT UNSIGNED NOT NULL,
+    target_type ENUM('review','question','answer','item','user') NOT NULL,
+    target_id BIGINT UNSIGNED NOT NULL,
+    category ENUM('spam','harassment','misinformation','inappropriate','copyright','other') NOT NULL,
+    description TEXT,
+    status ENUM('pending','in_review','resolved','dismissed') NOT NULL DEFAULT 'pending',
+    priority TINYINT UNSIGNED NOT NULL DEFAULT 5,
+    assigned_to BIGINT UNSIGNED NULL,
+    resolved_at DATETIME(3) NULL,
+    resolution_note TEXT NULL,
+    user_visible_note TEXT NULL,
+    idempotency_key VARCHAR(128) NULL,
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    INDEX idx_reports_status_priority_created (status, priority ASC, created_at ASC),
+    INDEX idx_reports_target (target_type, target_id),
+    INDEX idx_reports_assigned_status (assigned_to, status),
+    CONSTRAINT fk_reports_reporter FOREIGN KEY (reporter_id) REFERENCES users(id),
+    CONSTRAINT fk_reports_assigned_to FOREIGN KEY (assigned_to) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,0 +1,1 @@
+ALTER TABLE idempotency_keys MODIFY COLUMN user_id BIGINT UNSIGNED NULL;

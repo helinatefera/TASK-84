@@ -1,0 +1,59 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: local_insights_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: local_insights
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: local_insights_backend
+    restart: unless-stopped
+    ports:
+      - "8443:8443"
+    environment:
+      DB_DSN: "appuser:apppassword@tcp(mysql:3306)/local_insights?parseTime=true&charset=utf8mb4&loc=UTC&multiStatements=true"
+      JWT_SECRET: "k8s-local-insights-jwt-secret-64chars-long-change-in-production!"
+      SERVER_ADDR: ":8443"
+      TLS_CERT: "/app/certs/server.crt"
+      TLS_KEY: "/app/certs/server.key"
+      MIGRATIONS_PATH: "/app/migrations"
+      CSRF_ENABLED: "true"
+      RATE_LIMIT_PER_MINUTE: "600"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: local_insights_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:443"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
