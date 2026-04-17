@@ -11,7 +11,7 @@ A full-stack application for managing user-generated feedback, moderating conten
 ## Quick Start
 
 ```bash
-docker compose up
+docker-compose up
 ```
 
 This single command builds and starts all three services:
@@ -28,18 +28,32 @@ The backend automatically runs all database migrations on startup. No manual set
 
 ## Default Credentials
 
+### Application demo accounts
+
+The very first `docker-compose up` seeds one account for every role so you can
+exercise the full role matrix without any manual SQL. All four accounts are
+active and ready to use immediately:
+
+| Role              | Username         | Email                    | Password          |
+|-------------------|------------------|--------------------------|-------------------|
+| admin             | `admin`          | `admin@local.test`       | `AdminPass1`      |
+| moderator         | `moderator`      | `moderator@local.test`   | `ModeratorPass1`  |
+| product_analyst   | `product_analyst`| `analyst@local.test`     | `AnalystPass1`    |
+| regular_user      | `demo_user`      | `demo@local.test`        | `DemoPass1`       |
+
+Rotate these before any shared or production deployment. New end-user accounts
+are self-registered via `POST /api/v1/auth/register` and receive the
+`regular_user` role by default; use the `admin` account above to change roles
+through `PUT /api/v1/admin/users/:id/role`.
+
+### Database credentials
+
 | Field             | Value         |
 |-------------------|---------------|
 | MySQL root pass   | rootpassword  |
 | MySQL user        | appuser       |
 | MySQL password    | apppassword   |
 | MySQL database    | local_insights|
-
-New users self-register via `POST /api/v1/auth/register` (creates regular_user role). The first admin must be set manually in the database:
-
-```sql
-UPDATE users SET role = 'admin' WHERE username = 'yourusername';
-```
 
 ## API Endpoints
 
@@ -60,6 +74,7 @@ All endpoints are prefixed with `/api/v1`.
 | GET    | /items/:id/questions          | List questions for an item     |
 | GET    | /questions/:id/answers        | List answers for a question    |
 | GET    | /images/:hash                 | Serve image by content hash    |
+`| GET    | /csrf                         | Get CSRF token (set in cookie) |
 | GET    | /health                       | Health check                   |
 
 ### Authenticated (Any Role)
@@ -186,7 +201,7 @@ No stack traces, internal details, or framework-specific information is ever exp
 - **Authentication**: JWT access tokens (15min) + refresh tokens (7 days)
 - **Password Hashing**: Argon2id with random salt
 - **CAPTCHA**: Local arithmetic CAPTCHA after 5 failed logins in 15 minutes
-- **CSRF Protection**: Double-submit cookie pattern enabled by default (`CSRF_ENABLED=true` in docker-compose.yml). Frontend auto-fetches token via `GET /api/v1/csrf` before first mutating request.
+- **CSRF Protection**: Double-submit cookie pattern enabled by default (`CSRF_ENABLED=true` in docker-compose.yml). Frontend calls `GET /api/v1/csrf` before the first mutating request; the response is `{"csrf_token":"<hex>"}` and a `csrf_token` cookie is set. Mutating requests must include the token in the `X-CSRF-Token` header matching the cookie.
 - **Rate Limiting**: 60 requests/minute per user (token bucket)
 - **IP Filtering**: Allowlist/denylist with deny-first precedence
 - **Idempotency**: All authenticated POST endpoints require an `X-Idempotency-Key` header (10 min TTL). Public auth routes (register/login/refresh) are exempt. The key is scoped per user and endpoint to prevent cross-endpoint replay.
@@ -257,7 +272,7 @@ run_tests.sh         # Master test orchestrator
 
 ## Verification
 
-After running `docker compose up`, verify the system is working:
+After running `docker-compose up`, verify the system is working:
 
 1. **Health check** (use `-k` for self-signed cert):
    ```bash
@@ -301,7 +316,6 @@ After running `docker compose up`, verify the system is working:
 repo/
 ├── docker-compose.yml          # Orchestrates all services
 ├── README.md                   # This file
-├── plan.md                     # Architecture and design plan
 ├── run_tests.sh                # Test orchestrator
 ├── unit_tests/                 # Go unit tests
 ├── API_tests/                  # API functional tests
@@ -320,7 +334,7 @@ repo/
 │   │   ├── job/                # Background job scheduler
 │   │   ├── pkg/                # Shared packages
 │   │   └── errs/               # Error types
-│   └── migrations/             # 46 SQL migration files (up + down)
+│   └── migrations/             # 52 SQL migration files (up + down)
 └── frontend/
     ├── Dockerfile
     ├── nginx.conf              # Nginx config with API proxy

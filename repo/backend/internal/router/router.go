@@ -45,8 +45,10 @@ func Setup(cfg *config.Config, db *database.DB, jwtMgr *jwt.Manager, h *Handlers
 
 	// CSRF token endpoint
 	api.GET("/csrf", func(c *gin.Context) {
-		// Handled by CSRF middleware's GET handler
-		c.JSON(200, gin.H{"message": "CSRF token set in cookie"})
+		// When CSRF is enabled the middleware intercepts this request,
+		// sets the cookie, and returns {"csrf_token": "<token>"}.
+		// This handler only runs when CSRF is disabled.
+		c.JSON(200, gin.H{"csrf_token": ""})
 	})
 
 	// Health check

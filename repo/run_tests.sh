@@ -133,7 +133,7 @@ else
         -e API_BASE_URL=https://backend:8443/api/v1 \
         -v "$SCRIPT_DIR/API_tests:/tests:ro" \
         alpine:3.19 \
-        sh -c "apk add --no-cache curl jq bash mysql-client >/dev/null 2>&1 && bash /tests/run_api_tests.sh" && API_PASS=true || API_PASS=false
+        sh -c "apk add --no-cache bash jq mysql-client curl c-ares >/dev/null 2>&1 && bash /tests/run_api_tests.sh" && API_PASS=true || API_PASS=false
 fi
 
 if [ "$API_PASS" = true ]; then
