@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -145,12 +146,15 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 		}
 	}
 
+	now := time.Now().UTC()
 	review := &model.Review{
 		UUID:        uuid.New().String(),
 		ItemID:      itemID,
 		UserID:      userID,
 		Rating:      uint8(req.Rating),
 		FraudStatus: model.FraudStatusNormal,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
 	if filteredBody != "" {

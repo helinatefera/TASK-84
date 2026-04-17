@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/localinsights/portal/internal/dto/request"
@@ -126,11 +127,14 @@ func (h *UserHandler) UpdatePreferences(c *gin.Context) {
 	}
 
 	prefs, _ := h.prefsRepo.GetByUserID(c.Request.Context(), userID)
+	now := time.Now().UTC()
 	if prefs == nil {
 		prefs = &model.UserPreferences{
-			UserID: userID,
+			UserID:    userID,
+			CreatedAt: now,
 		}
 	}
+	prefs.UpdatedAt = now
 
 	if req.Locale != "" {
 		prefs.Locale = req.Locale

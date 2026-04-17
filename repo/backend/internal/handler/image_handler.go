@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/localinsights/portal/internal/config"
@@ -92,6 +93,7 @@ func (h *ImageHandler) Upload(c *gin.Context) {
 		Status:           status,
 		QuarantineReason: quarantineReason,
 		UploadedBy:       userID,
+		CreatedAt:        time.Now().UTC(),
 	}
 
 	if err := h.imageRepo.Create(c.Request.Context(), img); err != nil {
@@ -121,6 +123,10 @@ func (h *ImageHandler) ServeByHash(c *gin.Context) {
 	img, err := h.imageRepo.GetByHash(c.Request.Context(), hash)
 	if err != nil {
 		respondAppError(c, err)
+		return
+	}
+	if img == nil {
+		respondAppError(c, errs.ErrNotFound)
 		return
 	}
 
